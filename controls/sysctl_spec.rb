@@ -346,7 +346,7 @@ control '33' do
 
   # parse for cpu flags
   flags = parse_config_file('/proc/cpuinfo', assignment_re: /^([^:]*?)\s+:\s+(.*?)$/).flags
-  flags = flags || ''
+  flags ||= ''
   flags = flags.split(' ')
 
   unless flags.include?('nx')
