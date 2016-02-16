@@ -302,7 +302,7 @@ control '29' do
   title 'Disable loading kernel modules'
   desc 'The sysctl key kernel.modules_disabled is very straightforward. If it contains a "1" it will disable loading new modules, where a "0" will still allow loading them. Using this option will be a great protection against loading malicious kernel modules.'
   describe kernel_parameter('kernel.modules_disabled') do
-    its(:value) { should eq 1 }
+    its(:value) { should eq 0 }
   end
 end
 
@@ -337,12 +337,18 @@ control '33' do
   impact 1.0
   title 'CPU No execution Flag or Kernel ExecShield'
   desc 'Kernel features and CPU flags provide a protection against buffer overflows. The CPU NX Flag and the kernel parameter exec-shield prevents code execution on a per memory page basis. If the CPU supports the NX-Flag then this should be used instead of the kernel parameter exec-shield.'
-  flags = parse_config_file('/proc/cpuinfo', assignment_re: /^([^:]*?)\s+:\s+(.*?)$/).flags.split(' ')
+
   describe '/proc/cpuinfo' do
     it 'Flags should include NX' do
       expect(flags).to include('nx')
     end
   end
+
+  # parse for cpu flags
+  flags = parse_config_file('/proc/cpuinfo', assignment_re: /^([^:]*?)\s+:\s+(.*?)$/).flags
+  flags = flags || ''
+  flags = flags.split(' ')
+
   unless flags.include?('nx')
     # if no nx flag is present, we require exec-shield
     describe kernel_parameter('kernel.exec-shield') do
