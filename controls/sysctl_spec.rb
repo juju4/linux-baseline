@@ -18,6 +18,7 @@
 # author: Patrick Muench
 
 sysctl_forwarding = attribute('sysctl_forwarding', default: false, description: 'Is network forwarding needed?')
+kernel_modules_disabled = attribute('kernel_modules_disabled', default: 0, description: 'Should loading of kernel modules be disabled?')
 
 control 'sysctl-01' do
   impact 1.0
@@ -177,7 +178,7 @@ control 'sysctl-16' do
   impact 1.0
   title 'Disable sending of redirects packets'
   desc 'Disable sending of redirects packets'
-  describe kernel_parameter('net.ipv4.conf.all.send_redirects') do
+  describe kernel_parameter('net.ipv4.conf.default.send_redirects') do
     its(:value) { should eq 0 }
   end
   describe kernel_parameter('net.ipv4.conf.all.send_redirects') do
@@ -304,7 +305,7 @@ control 'sysctl-29' do
   title 'Disable loading kernel modules'
   desc 'The sysctl key kernel.modules_disabled is very straightforward. If it contains a "1" it will disable loading new modules, where a "0" will still allow loading them. Using this option will be a great protection against loading malicious kernel modules.'
   describe kernel_parameter('kernel.modules_disabled') do
-    its(:value) { should eq 0 }
+    its(:value) { should eq kernel_modules_disabled }
   end
 end
 
@@ -317,26 +318,25 @@ control 'sysctl-30' do
   end
 end
 
-control 'sysctl-31' do
+control 'sysctl-31a' do
   impact 1.0
-  title 'Secure Core Dumps'
-  desc 'Ensure that core dumps can never be made by setuid programs or with fully qualified path'
+  title 'Secure Core Dumps - dump settings'
+  desc 'Ensure that core dumps can never be made by setuid programs'
 
   describe kernel_parameter('fs.suid_dumpable') do
-    ## those are not valid. how to?
-    # its(:value) { should eq 0 or should eq 2 }
-    # its(:value) { should match /[02]/ }
-    # its(:value) { should match /0|2/ }
-    its(:value) { should eq 2 }
+    its(:value) { should cmp(/(0|2)/) }
   end
-  # unless kernel_parameter('fs.suid_dumpable') == 2
-  #   describe kernel_parameter('fs.suid_dumpable') do
-  #     its(:value) { should eq 2 }
-  # end
+end
+
+control 'sysctl-31b' do
+  impact 1.0
+  title 'Secure Core Dumps - dump path'
+  desc 'Ensure that core dumps are done with fully qualified path'
+  only_if { kernel_parameter('fs.suid_dumpable').value == 2 }
+
   describe kernel_parameter('kernel.core_pattern') do
     its(:value) { should match %r{^/.*} }
   end
-  # end
 end
 
 control 'sysctl-32' do
@@ -354,7 +354,7 @@ control 'sysctl-33' do
   desc 'Kernel features and CPU flags provide a protection against buffer overflows. The CPU NX Flag and the kernel parameter exec-shield prevents code execution on a per memory page basis. If the CPU supports the NX-Flag then this should be used instead of the kernel parameter exec-shield.'
 
   # parse for cpu flags
-  flags = parse_config_file('/proc/cpuinfo', assignment_re: /^([^:]*?)\s+:\s+(.*?)$/).flags
+  flags = parse_config_file('/proc/cpuinfo', assignment_regex: /^([^:]*?)\s+:\s+(.*?)$/).flags
   flags ||= ''
   flags = flags.split(' ')
 
@@ -366,8 +366,13 @@ control 'sysctl-33' do
 
   unless flags.include?('nx')
     # if no nx flag is present, we require exec-shield
-    describe kernel_parameter('kernel.exec-shield') do
-      its(:value) { should eq 1 }
+    # This only on RHEL/Centos 5 and 6
+    # http://centos.1050465.n5.nabble.com/CentOS-ExecShield-in-C6-or-C7-kernels-td5738883.html
+    # https://askubuntu.com/questions/226537/is-there-exec-shield-buffer-overflow-protection-for-ubuntu
+    if os.redhat?
+      describe kernel_parameter('kernel.exec-shield') do
+        its(:value) { should eq 1 }
+      end
     end
   end
 end
