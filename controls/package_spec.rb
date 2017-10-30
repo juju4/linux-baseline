@@ -34,7 +34,7 @@ end
 control 'package-02' do
   impact 1.0
   title 'Do not install Telnet server'
-  desc 'Telnet protocol uses unencrypted communication, that means the passowrd and other sensitive data are unencrypted. http://www.nsa.gov/ia/_files/os/redhat/rhel5-guide-i731.pdf, Chapter 3.2.2'
+  desc 'Telnet protocol uses unencrypted communication, that means the password and other sensitive data are unencrypted. http://www.nsa.gov/ia/_files/os/redhat/rhel5-guide-i731.pdf, Chapter 3.2.2'
   describe package('telnetd') do
     it { should_not be_installed }
   end
@@ -80,7 +80,7 @@ control 'package-08' do
   impact 1.0
   title 'Install auditd'
   desc 'auditd provides extended logging capacities on recent distribution'
-  audit_pkg = os.redhat? ? 'audit' : 'auditd'
+  audit_pkg = os.redhat? || os.suse? || os.name == 'amazon' ? 'audit' : 'auditd'
   describe package(audit_pkg) do
     it { should be_installed }
   end
@@ -96,5 +96,14 @@ control 'package-08' do
     its('admin_space_left_action') { should cmp 'SUSPEND' }
     its('disk_full_action') { should cmp 'SUSPEND' }
     its('disk_error_action') { should cmp 'SUSPEND' }
+  end
+end
+
+control 'package-09' do
+  impact 1.0
+  title 'CIS: Additional process hardening'
+  desc '1.5.4 Ensure prelink is disabled'
+  describe package('prelink') do
+    it { should_not be_installed }
   end
 end

@@ -21,11 +21,8 @@ login_defs_umask = attribute('login_defs_umask', default: '027', description: 'D
 login_defs_passmaxdays = attribute('login_defs_passmaxdays', default: '60', description: 'Default password maxdays to set in login.defs')
 login_defs_passmindays = attribute('login_defs_passmindays', default: '7', description: 'Default password mindays to set in login.defs')
 login_defs_passwarnage = attribute('login_defs_passwarnage', default: '7', description: 'Default password warnage (days) to set in login.defs')
-if os.redhat?
-  shadow_group = 'root'
-elsif os.debian?
-  shadow_group = 'shadow'
-end
+shadow_group = 'root'
+shadow_group = 'shadow' if os.debian? || os.suse?
 blacklist = attribute(
   'blacklist',
   default: [
@@ -76,12 +73,9 @@ blacklist = attribute(
 control 'os-01' do
   impact 1.0
   title 'Trusted hosts login'
-  desc "Rhosts/hosts.equiv files are a weak implemenation of authentication. Disabling the .rhosts and hosts.equiv support helps to prevent users from subverting the system's normal access control mechanisms of the system."
-  describe command('find / -name \'.rhosts\'') do
-    its('stdout') { should be_empty }
-  end
-  describe command('find / -name \'hosts.equiv\' ') do
-    its('stdout') { should be_empty }
+  desc "hosts.equiv file is a weak implemenation of authentication. Disabling the hosts.equiv support helps to prevent users from subverting the system's normal access control mechanisms of the system."
+  describe file('/etc/hosts.equiv') do
+    it { should_not exist }
   end
 end
 
@@ -99,13 +93,13 @@ control 'os-02' do
     it { should be_readable.by('owner') }
     it { should_not be_readable.by('other') }
   end
-  if os.redhat?
-    describe file('/etc/shadow') do
-      it { should_not be_readable.by('group') }
-    end
-  elsif os.debian?
+  if os.debian? || os.suse?
     describe file('/etc/shadow') do
       it { should be_readable.by('group') }
+    end
+  else
+    describe file('/etc/shadow') do
+      it { should_not be_readable.by('group') }
     end
   end
 end
@@ -220,10 +214,25 @@ control 'os-09' do
   impact 1.0
   title 'Check for .rhosts and .netrc file'
   desc 'Find .rhosts and .netrc files - CIS Benchmark 9.2.9-10'
-
-  output = command('find / \( -iname .rhosts -o -iname .netrc \) -print 2>/dev/null | grep -v \'^find:\'')
+  output = command('find / -maxdepth 3 \( -iname .rhosts -o -iname .netrc \) -print 2>/dev/null | grep -v \'^find:\'')
   out = output.stdout.split(/\r?\n/)
   describe out do
     it { should be_empty }
+  end
+end
+
+control 'os-10' do
+  impact 1.0
+  title 'CIS: Disable unused filesystems'
+  desc '1.1.1 Ensure mounting of cramfs, freevxfs, jffs2, hfs, hfsplus, squashfs, udf, FAT'
+  describe file('/etc/modprobe.d/dev-sec.conf') do
+    its(:content) { should match 'install cramfs /bin/true' }
+    its(:content) { should match 'install freevxfs /bin/true' }
+    its(:content) { should match 'install jffs2 /bin/true' }
+    its(:content) { should match 'install hfs /bin/true' }
+    its(:content) { should match 'install hfsplus /bin/true' }
+    its(:content) { should match 'install squashfs /bin/true' }
+    its(:content) { should match 'install udf /bin/true' }
+    its(:content) { should match 'install vfat /bin/true' }
   end
 end
