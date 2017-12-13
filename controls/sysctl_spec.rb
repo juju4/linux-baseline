@@ -18,6 +18,7 @@
 # author: Patrick Muench
 
 sysctl_forwarding = attribute('sysctl_forwarding', default: false, description: 'Is network forwarding needed?')
+sysctl_ipv6 = attribute('sysctl_ipv6', default: true, description: 'Is network ipv6 enabled? false if disabled at grub level for example.')
 kernel_modules_disabled = attribute('kernel_modules_disabled', default: 0, description: 'Should loading of kernel modules be disabled?')
 
 control 'sysctl-01' do
@@ -205,6 +206,7 @@ control 'sysctl-18' do
   describe kernel_parameter('net.ipv6.conf.all.disable_ipv6') do
     its(:value) { should eq 1 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-19' do
@@ -214,6 +216,7 @@ control 'sysctl-19' do
   describe kernel_parameter('net.ipv6.conf.all.forwarding') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-20' do
@@ -226,6 +229,7 @@ control 'sysctl-20' do
   describe kernel_parameter('net.ipv6.conf.all.accept_redirects') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-21' do
@@ -235,6 +239,7 @@ control 'sysctl-21' do
   describe kernel_parameter('net.ipv6.conf.default.router_solicitations') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-22' do
@@ -244,6 +249,7 @@ control 'sysctl-22' do
   describe kernel_parameter('net.ipv6.conf.default.accept_ra_rtr_pref') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-23' do
@@ -253,6 +259,7 @@ control 'sysctl-23' do
   describe kernel_parameter('net.ipv6.conf.default.accept_ra_pinfo') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-24' do
@@ -262,6 +269,7 @@ control 'sysctl-24' do
   describe kernel_parameter('net.ipv6.conf.default.accept_ra_defrtr') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-25' do
@@ -274,6 +282,7 @@ control 'sysctl-25' do
   describe kernel_parameter('net.ipv6.conf.default.accept_ra') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-26' do
@@ -283,6 +292,7 @@ control 'sysctl-26' do
   describe kernel_parameter('net.ipv6.conf.default.autoconf') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-27' do
@@ -292,6 +302,7 @@ control 'sysctl-27' do
   describe kernel_parameter('net.ipv6.conf.default.dad_transmits') do
     its(:value) { should eq 0 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-28' do
@@ -301,6 +312,7 @@ control 'sysctl-28' do
   describe kernel_parameter('net.ipv6.conf.default.max_addresses') do
     its(:value) { should eq 1 }
   end
+  only_if { sysctl_ipv6 == true }
 end
 
 control 'sysctl-29' do
