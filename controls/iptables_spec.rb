@@ -20,7 +20,7 @@ iptables_default_rule = attribute('iptables_default_rule', default: 'DROP', desc
 iptables_openports = attribute(
   'iptables_openports',
   default: [
-    '-A INPUT -p tcp --dport 22 -j ACCEPT',
+    '-A INPUT -p tcp --dport 22 -j ACCEPT'
   ],
   description: 'list of iptable rules to check for open ports'
 )
