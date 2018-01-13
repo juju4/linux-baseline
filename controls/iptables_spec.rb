@@ -18,17 +18,17 @@
 iptables_check = attribute('iptables_check', default: true, description: 'Control usage of iptables')
 iptables_default_rule = attribute('iptables_default_rule', default: 'DROP', description: 'Default policy action for iptables')
 iptables_openports = attribute(
-    'iptables_openports', 
-    default: %w(
-      -A INPUT -p tcp --dport 22 -j ACCEPT
-    ),
-    description: 'list of iptable rules to check for open ports'
-  )
+  'iptables_openports',
+  default: [
+    '-A INPUT -p tcp --dport 22 -j ACCEPT',
+  ],
+  description: 'list of iptable rules to check for open ports'
+)
 
 control 'iptables-01' do
   impact 1.0
   title 'IPtables installed'
-  desc "CIS 3.6.1 - Ensure iptables is installed"
+  desc 'CIS 3.6.1 - Ensure iptables is installed'
   describe file('/sbin/iptables') do
     it { should exist }
   end
@@ -52,10 +52,10 @@ control 'iptables-03' do
   title 'IPtables loopback allow policy'
   desc 'CIS 3.6.3 - Ensure loopback traffic is configured'
   describe iptables do
-    it { should have_rule("-A INPUT -i lo -j ACCEPT") }
-    it { should have_rule("-A OUTPUT -o lo -j ACCEPT") }
+    it { should have_rule('-A INPUT -i lo -j ACCEPT') }
+    it { should have_rule('-A OUTPUT -o lo -j ACCEPT') }
     # No option to ensure right order...
-    it { should have_rule("-A INPUT -s 127.0.0.0/8 -j DROP") }
+    it { should have_rule('-A INPUT -s 127.0.0.0/8 -j DROP') }
   end
   only_if { iptables_check == true }
 end
@@ -65,12 +65,12 @@ control 'iptables-04' do
   title 'IPtables outbound and established allow policy'
   desc 'CIS 3.6.4 - Ensure outbound and established connections are configured'
   describe iptables do
-    it { should have_rule("-A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT") }
-    it { should have_rule("-A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT") }
-    it { should have_rule("-A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT") }
-    it { should have_rule("-A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT") }
-    it { should have_rule("-A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT") }
-    it { should have_rule("-A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT") }
+    it { should have_rule('-A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT') }
+    it { should have_rule('-A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT') }
+    it { should have_rule('-A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT') }
+    it { should have_rule('-A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT') }
+    it { should have_rule('-A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT') }
+    it { should have_rule('-A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT') }
   end
   only_if { iptables_check == true }
 end
@@ -81,7 +81,7 @@ control 'iptables-05' do
   desc 'CIS 3.6.5 - Ensure firewall rules exists for all open ports'
   describe iptables do
     iptables_openports.each do |port_rule|
-      it { should have_rule("#{port_rule}") }
+      it { should have_rule(port_rule.to_s) }
     end
   end
   only_if { iptables_check == true }
