@@ -17,56 +17,20 @@
 # author: Dominik Richter
 # author: Patrick Muench
 
-login_defs_umask = attribute('login_defs_umask', default: '027', description: 'Default umask to set in login.defs')
+log_dir_group = 'root'
+log_dir_group = 'syslog' if os.name == 'ubuntu' && os[:release].to_i >= 14
+login_defs_umask = attribute('login_defs_umask', default: os.redhat? ? '077' : '027', description: 'Default umask to set in login.defs')
+
 login_defs_passmaxdays = attribute('login_defs_passmaxdays', default: '60', description: 'Default password maxdays to set in login.defs')
 login_defs_passmindays = attribute('login_defs_passmindays', default: '7', description: 'Default password mindays to set in login.defs')
 login_defs_passwarnage = attribute('login_defs_passwarnage', default: '7', description: 'Default password warnage (days) to set in login.defs')
+
 shadow_group = 'root'
 shadow_group = 'shadow' if os.debian? || os.suse?
+
 blacklist = attribute(
   'blacklist',
-  default: [
-    # blacklist as provided by NSA
-    '/usr/bin/rcp', '/usr/bin/rlogin', '/usr/bin/rsh',
-    # sshd must not use host-based authentication (see ssh cookbook)
-    '/usr/libexec/openssh/ssh-keysign',
-    '/usr/lib/openssh/ssh-keysign',
-    # misc others
-    '/sbin/netreport',                                            # not normally required for user
-    '/usr/sbin/usernetctl',                                       # modify interfaces via functional accounts
-    # connecting to ...
-    '/usr/sbin/userisdnctl',                                      # no isdn...
-    '/usr/sbin/pppd',                                             # no ppp / dsl ...
-    # lockfile
-    '/usr/bin/lockfile',
-    '/usr/bin/mail-lock',
-    '/usr/bin/mail-unlock',
-    '/usr/bin/mail-touchlock',
-    '/usr/bin/dotlockfile',
-    # need more investigation, blacklist for now
-    '/usr/bin/arping',
-    '/usr/sbin/arping',
-    '/usr/sbin/uuidd',
-    '/usr/bin/mtr',                                               # investigate current state...
-    '/usr/lib/evolution/camel-lock-helper-1.2',                   # investigate current state...
-    '/usr/lib/pt_chown',                                          # pseudo-tty, needed?
-    '/usr/lib/eject/dmcrypt-get-device',
-    '/usr/lib/mc/cons.saver' # midnight commander screensaver
-    # from Ubuntu xenial, need to investigate
-    # '/sbin/unix_chkpwd',
-    # '/sbin/pam_extrausers_chkpwd',
-    # '/usr/lib/x86_64-linux-gnu/utempter/utempter',
-    # '/usr/sbin/postdrop',
-    # '/usr/sbin/postqueue',
-    # '/usr/bin/ssh-agent',
-    # '/usr/bin/mlocate',
-    # '/usr/bin/crontab',
-    # '/usr/bin/screen',
-    # '/usr/bin/expiry',
-    # '/usr/bin/wall',
-    # '/usr/bin/chage',
-    # '/usr/bin/bsd-write'
-  ],
+  default: suid_blacklist.default,
   description: 'blacklist of suid/sgid program on system'
 )
 
@@ -89,9 +53,18 @@ control 'os-02' do
     it { should be_owned_by 'root' }
     its('group') { should eq shadow_group }
     it { should_not be_executable }
-    it { should be_writable.by('owner') }
-    it { should be_readable.by('owner') }
     it { should_not be_readable.by('other') }
+  end
+  if os.redhat? || os.name == 'fedora'
+    describe file('/etc/shadow') do
+      it { should_not be_writable.by('owner') }
+      it { should_not be_readable.by('owner') }
+    end
+  else
+    describe file('/etc/shadow') do
+      it { should be_writable.by('owner') }
+      it { should be_readable.by('owner') }
+    end
   end
   if os.debian? || os.suse?
     describe file('/etc/shadow') do
@@ -169,9 +142,9 @@ control 'os-05b' do
     it { should_not be_writable }
   end
   describe login_defs do
-    its('SYS_UID_MIN') { should eq '100' }
+    its('SYS_UID_MIN') { should eq '201' }
     its('SYS_UID_MAX') { should eq '999' }
-    its('SYS_GID_MIN') { should eq '100' }
+    its('SYS_GID_MIN') { should eq '201' }
     its('SYS_GID_MAX') { should eq '999' }
   end
   only_if { os.redhat? }
@@ -182,10 +155,8 @@ control 'os-06' do
   title 'Check for SUID/ SGID blacklist'
   desc 'Find blacklisted SUID and SGID files to ensure that no rogue SUID and SGID files have been introduced into the system'
 
-  output = command('find / -perm -4000 -o -perm -2000 -type f ! -path \'/proc/*\' ! -path \'/var/lib/lxd/containers/*\' -print 2>/dev/null | grep -v \'^find:\'')
-  diff = output.stdout.split(/\r?\n/) & blacklist
-  describe diff do
-    it { should be_empty }
+  describe suid_check(blacklist) do
+    its('diff') { should be_empty }
   end
 end
 
@@ -234,5 +205,16 @@ control 'os-10' do
     its(:content) { should match 'install squashfs /bin/true' }
     its(:content) { should match 'install udf /bin/true' }
     its(:content) { should match 'install vfat /bin/true' }
+  end
+end
+
+control 'os-11' do
+  impact 1.0
+  title 'Protect log-directory'
+  desc 'The log-directory /var/log should belong to root'
+  describe file('/var/log') do
+    it { should be_directory }
+    it { should be_owned_by 'root' }
+    it { should be_grouped_into log_dir_group }
   end
 end
