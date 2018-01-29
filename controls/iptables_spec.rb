@@ -29,11 +29,11 @@ iptables_input_ports = attribute(
 iptables_output_ports = attribute(
   'iptables_output_ports',
   default: [
-    '-A OUTPUT -p tcp --dport 53 -j ACCEPT'
-    '-A OUTPUT -p udp --dport 53 -j ACCEPT'
-    '-A OUTPUT -p udp --dport 123 -j ACCEPT'
-    '-A OUTPUT -p tcp --dport 80 -j ACCEPT'
-    '-A OUTPUT -p tcp --dport 443 -j ACCEPT'
+    '-A OUTPUT -p tcp --dport 53 -j ACCEPT',
+    '-A OUTPUT -p udp --dport 53 -j ACCEPT',
+    '-A OUTPUT -p udp --dport 123 -j ACCEPT',
+    '-A OUTPUT -p tcp --dport 80 -j ACCEPT',
+    '-A OUTPUT -p tcp --dport 443 -j ACCEPT',
     '-A OUTPUT -p icmp --icmp-type 0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT',
     '-A OUTPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT',
     '-A OUTPUT -p icmp --icmp-type 3 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT'
