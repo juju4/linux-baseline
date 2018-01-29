@@ -17,12 +17,33 @@
 
 iptables_check = attribute('iptables_check', default: true, description: 'Control usage of iptables')
 iptables_default_rule = attribute('iptables_default_rule', default: 'DROP', description: 'Default policy action for iptables')
-iptables_openports = attribute(
-  'iptables_openports',
+iptables_input_ports = attribute(
+  'iptables_input_ports',
   default: [
-    '-A INPUT -p tcp --dport 22 -j ACCEPT'
+    '-A INPUT -p tcp --dport 22 -j ACCEPT',
+    '-A INPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT',
+    '-A INPUT -p icmp --icmp-type 0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT'
   ],
-  description: 'list of iptable rules to check for open ports'
+  description: 'list of iptable rules to check for input rules'
+)
+iptables_output_ports = attribute(
+  'iptables_output_ports',
+  default: [
+    '-A OUTPUT -p tcp --dport 53 -j ACCEPT'
+    '-A OUTPUT -p udp --dport 53 -j ACCEPT'
+    '-A OUTPUT -p udp --dport 123 -j ACCEPT'
+    '-A OUTPUT -p tcp --dport 80 -j ACCEPT'
+    '-A OUTPUT -p tcp --dport 443 -j ACCEPT'
+    '-A OUTPUT -p icmp --icmp-type 0 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT',
+    '-A OUTPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT',
+    '-A OUTPUT -p icmp --icmp-type 3 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT'
+  ],
+  description: 'list of iptable rules to check for output rules'
+)
+iptables_forward_ports = attribute(
+  'iptables_forward_ports',
+  default: [],
+  description: 'list of iptable rules to check for forward rules'
 )
 
 control 'iptables-01' do
@@ -80,7 +101,13 @@ control 'iptables-05' do
   title 'IPtables open ports'
   desc 'CIS 3.6.5 - Ensure firewall rules exists for all open ports'
   describe iptables do
-    iptables_openports.each do |port_rule|
+    iptables_input_ports.each do |port_rule|
+      it { should have_rule(port_rule.to_s) }
+    end
+    iptables_output_ports.each do |port_rule|
+      it { should have_rule(port_rule.to_s) }
+    end
+    iptables_forward_ports.each do |port_rule|
       it { should have_rule(port_rule.to_s) }
     end
   end
