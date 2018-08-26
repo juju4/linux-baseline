@@ -20,7 +20,11 @@
 sysctl_forwarding = attribute('sysctl_forwarding', default: false, description: 'Is network forwarding needed?')
 sysctl_ipv6 = attribute('sysctl_ipv6', default: true, description: 'Is network ipv6 enabled? false if disabled at grub level for example.')
 kernel_modules_disabled = attribute('kernel_modules_disabled', default: 0, description: 'Should loading of kernel modules be disabled?')
-container_execution = virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+container_execution = begin
+                        virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+                      rescue NoMethodError
+                        false
+                      end
 
 control 'sysctl-01' do
   impact 1.0
