@@ -17,4 +17,5 @@ control 'profile-01' do
     its(:content) { should match "export HISTSIZE=#{profile_histsize}" }
     its(:content) { should match 'export HISTTIMEFORMAT="%a %b %Y %T %z "' }
   end
+  only_if { profile_check == true }
 end
