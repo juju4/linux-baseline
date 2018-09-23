@@ -27,7 +27,11 @@ login_defs_passwarnage = attribute('login_defs_passwarnage', default: '7', descr
 
 shadow_group = 'root'
 shadow_group = 'shadow' if os.debian? || os.suse?
-container_execution = virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+container_execution = begin
+                        virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+                      rescue NoMethodError
+                        false
+                      end
 
 blacklist = attribute(
   'blacklist',
@@ -206,7 +210,11 @@ control 'os-10' do
     its(:content) { should match 'install hfsplus /bin/true' }
     its(:content) { should match 'install squashfs /bin/true' }
     its(:content) { should match 'install udf /bin/true' }
-    its(:content) { should match 'install vfat /bin/true' }
+    # if efi is active, do not disable vfat. otherwise the system
+    # won't boot anymore
+    unless Dir.exist?('/sys/firmware/efi')
+      its(:content) { should match 'install vfat /bin/true' }
+    end
   end
 end
 

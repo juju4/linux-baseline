@@ -18,7 +18,11 @@
 # author: Patrick Muench
 
 val_syslog_pkg = attribute('syslog_pkg', default: 'rsyslog', description: 'syslog package to ensure present (default: rsyslog, alternative: syslog-ng...')
-container_execution = virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+container_execution = begin
+                        virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
+                      rescue NoMethodError
+                        false
+                      end
 
 control 'package-01' do
   impact 1.0
@@ -45,7 +49,7 @@ control 'package-03' do
   impact 1.0
   title 'Do not install rsh server'
   desc 'The r-commands suffers same problem as telnet. http://www.nsa.gov/ia/_files/os/redhat/rhel5-guide-i731.pdf, Chapter 3.2.3'
-  describe package('telnetd') do
+  describe package('rsh-server') do
     it { should_not be_installed }
   end
 end
@@ -84,7 +88,7 @@ end
 control 'package-08' do
   impact 1.0
   title 'Install auditd'
-  desc 'auditd provides extended logging capacities on recent distribution'
+  desc 'auditd provides extended logging capabilities on recent distributions'
   only_if { !container_execution }
   audit_pkg = os.redhat? || os.suse? || os.name == 'amazon' || os.name == 'fedora' ? 'audit' : 'auditd'
   describe package(audit_pkg) do
