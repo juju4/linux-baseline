@@ -17,6 +17,37 @@
 
 iptables_check = attribute('iptables_check', default: true, description: 'Control usage of iptables')
 iptables_default_rule = attribute('iptables_default_rule', default: 'DROP', description: 'Default policy action for iptables')
+iptables_default_policy = attribute(
+  'iptables_default_policy',
+  default: [
+    "-P INPUT #{iptables_default_rule}",
+    "-P OUTPUT #{iptables_default_rule}",
+    "-P FORWARD #{iptables_default_rule}"
+  ],
+  description: 'list of iptable rules to check for default policy'
+)
+iptables_loopback_policy = attribute(
+  'iptables_loopback_policy',
+  default: [
+    '-A INPUT -i lo -j ACCEPT',
+    '-A OUTPUT -o lo -j ACCEPT',
+    # No option to ensure right order...
+    '-A INPUT -s 127.0.0.0/8 -j DROP'
+  ],
+  description: 'list of iptable rules to check for loopback policy'
+)
+iptables_established_policy = attribute(
+  'iptables_established_policy',
+  default: [
+    '-A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT',
+    '-A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT',
+    '-A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT',
+    '-A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT',
+    '-A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT',
+    '-A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT'
+  ],
+  description: 'list of iptable rules to check for established allow policy'
+)
 iptables_input_ports = attribute(
   'iptables_input_ports',
   default: [
@@ -61,9 +92,9 @@ control 'iptables-02' do
   title 'IPtables default deny policy'
   desc 'CIS 3.6.2 - Ensure default deny firewall policy'
   describe iptables do
-    it { should have_rule("-P INPUT #{iptables_default_rule}") }
-    it { should have_rule("-P OUTPUT #{iptables_default_rule}") }
-    it { should have_rule("-P FORWARD #{iptables_default_rule}") }
+    iptables_default_policy.each do |port_rule|
+      it { should have_rule(port_rule.to_s) }
+    end
   end
   only_if { iptables_check == true }
 end
@@ -73,10 +104,9 @@ control 'iptables-03' do
   title 'IPtables loopback allow policy'
   desc 'CIS 3.6.3 - Ensure loopback traffic is configured'
   describe iptables do
-    it { should have_rule('-A INPUT -i lo -j ACCEPT') }
-    it { should have_rule('-A OUTPUT -o lo -j ACCEPT') }
-    # No option to ensure right order...
-    it { should have_rule('-A INPUT -s 127.0.0.0/8 -j DROP') }
+    iptables_loopback_policy.each do |port_rule|
+      it { should have_rule(port_rule.to_s) }
+    end
   end
   only_if { iptables_check == true }
 end
@@ -86,12 +116,9 @@ control 'iptables-04' do
   title 'IPtables outbound and established allow policy'
   desc 'CIS 3.6.4 - Ensure outbound and established connections are configured'
   describe iptables do
-    it { should have_rule('-A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT') }
-    it { should have_rule('-A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT') }
-    it { should have_rule('-A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT') }
-    it { should have_rule('-A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT') }
-    it { should have_rule('-A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT') }
-    it { should have_rule('-A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT') }
+    iptables_established_policy.each do |port_rule|
+      it { should have_rule(port_rule.to_s) }
+    end
   end
   only_if { iptables_check == true }
 end
