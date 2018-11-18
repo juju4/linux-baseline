@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 profile_check = attribute('profile_check', default: true, description: 'Control /etc/profile settings')
 profile_file = attribute('profile_file', default: '/etc/profile', description: 'Control which file to check for settings')
