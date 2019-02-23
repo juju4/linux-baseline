@@ -13,4 +13,5 @@ control 'cpu-01' do
   describe file('/sys/devices/system/cpu/vulnerabilities/spec_store_bypass') do
     it { should exist }
     its(:content) { should_not match 'Vulnerable' }
+  end
 end
