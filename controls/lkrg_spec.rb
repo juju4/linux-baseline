@@ -45,11 +45,11 @@ control 'lkrg-03' do
   desc 'Verifying lkrg module'
   only_if { sysctl_lkrg && !container_execution }
   describe command('find /lib/modules/ -iname p_lkrg.ko') do
-    it { should match 'p_lkrg.ko' }
+    its('stdout') { should match (/p_lkrg.ko/) }
   end
   describe command('modinfo p_lkrg') do
-    it { should match "pi3's Linux kernel Runtime Guard" }
-    it { should match "Adam 'pi3' Zabrocki (http://pi3.com.pl)" }
+    its('stdout') { should match (/pi3's Linux kernel Runtime Guard/) }
+    its('stdout') { should match (/Adam 'pi3' Zabrocki (http://pi3.com.pl)/) }
   end
 end
 
