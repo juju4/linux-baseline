@@ -8,14 +8,15 @@ container_execution = begin
                         false
                       end
 syslog_file = if os.redhat?
-                  '/var/log/messages'
+                '/var/log/messages'
               else
-                  '/var/log/syslog'
+                '/var/log/syslog'
               end
 
 control 'lkrg-01' do
   impact 1.0
   title 'Check lkrg files'
+  only_if { sysctl_lkrg }
   describe file('/etc/systemd/system/lkrg.service') do
     it { should exist }
     it { should be_file }
@@ -28,8 +29,8 @@ end
 control 'lkrg-02' do
   impact 1.0
   title 'Lkrg sysctl'
-  desc "Verifying lkrg sysctl entries"
-  only_if { !container_execution }
+  desc 'Verifying lkrg sysctl entries'
+  only_if { sysctl_lkrg && !container_execution }
   describe kernel_parameter('lkrg.block_modules') do
     its(:value) { should eq 0 }
   end
@@ -41,8 +42,8 @@ end
 control 'lkrg-03' do
   impact 1.0
   title 'Lkrg module'
-  desc "Verifying lkrg module"
-  only_if { !container_execution }
+  desc 'Verifying lkrg module'
+  only_if { sysctl_lkrg && !container_execution }
   describe command('find /lib/modules/ -iname p_lkrg.ko') do
     it { should match 'p_lkrg.ko' }
   end
@@ -56,7 +57,7 @@ control 'lkrg-4.0' do
   impact 1.0
   title 'Lkrg should have log entries (syslog)'
   desc 'Ensure syslog logs have expected entries for lkrg'
-  only_if { !container_execution }
+  only_if { sysctl_lkrg && !container_execution }
   describe file(syslog_file.to_s) do
     it { should be_file }
     its('content') { should match '[p_lkrg] Loading LKRG...' }
