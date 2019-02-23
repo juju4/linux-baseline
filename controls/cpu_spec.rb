@@ -5,6 +5,7 @@ cpu_check = attribute('cpu_check', default: false, description: 'Control CPU sta
 control 'cpu-01' do
   impact 1.0
   title 'Trusted hosts login'
+  only_if { cpu_check }
   reference 'https://www.linux.com/blog/intro-to-linux/2018/1/linux-kernel-415-unusual-release-cycle'
   describe file('/sys/devices/system/cpu/vulnerabilities/meltdown') do
     it { should exist }
