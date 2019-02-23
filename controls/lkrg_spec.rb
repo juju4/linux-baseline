@@ -49,7 +49,7 @@ control 'lkrg-03' do
   end
   describe command('modinfo p_lkrg') do
     its('stdout') { should match (/pi3's Linux kernel Runtime Guard/) }
-    its('stdout') { should match (/Adam 'pi3' Zabrocki (http://pi3.com.pl)/) }
+    its('stdout') { should match (/Adam 'pi3' Zabrocki \(http:\/\/pi3.com.pl\)/) }
   end
 end
 
