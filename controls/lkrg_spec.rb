@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-sysctl_lkrg = attribute('sysctl_lkrg', default: true, description: 'Checking lkrg module?')
+sysctl_lkrg = attribute('sysctl_lkrg', default: false, description: 'Checking lkrg module?')
 
 container_execution = begin
                         virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
