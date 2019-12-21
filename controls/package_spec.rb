@@ -19,7 +19,7 @@
 # author: Dominik Richter
 # author: Patrick Muench
 
-val_syslog_pkg = attribute('syslog_pkg', default: 'rsyslog', description: 'syslog package to ensure present (default: rsyslog, alternative: syslog-ng...')
+val_syslog_pkg = attribute('syslog_pkg', value: 'rsyslog', description: 'syslog package to ensure present (default: rsyslog, alternative: syslog-ng...')
 container_execution = begin
                         virtualization.role == 'guest' && virtualization.system =~ /^(lxc|docker)$/
                       rescue NoMethodError
@@ -55,6 +55,8 @@ control 'package-03' do
     it { should_not be_installed }
   end
 end
+
+# package-04 is reserved, because we forgot to use it in the first-place :-)
 
 control 'package-05' do
   impact 1.0
@@ -99,7 +101,7 @@ control 'package-08' do
   describe auditd_conf do
     its('log_file') { should cmp '/var/log/audit/audit.log' }
     its('log_format') { should cmp 'raw' }
-    its('flush') { should match(/^INCREMENTAL|INCREMENTAL_ASYNC$/) }
+    its('flush') { should match(/^incremental|INCREMENTAL|incremental_async|INCREMENTAL_ASYNC$/) }
     its('max_log_file_action') { should cmp 'keep_logs' }
     its('space_left') { should cmp 75 }
     its('action_mail_acct') { should cmp 'root' }
